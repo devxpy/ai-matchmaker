@@ -33,7 +33,7 @@ else:
         f.write(_json)
 
 
-SHEETS_URL = os.environ["SHEETS_URL"]
+SHEETS_URL = config("SHEETS_URL")
 batch_size = 100
 
 
