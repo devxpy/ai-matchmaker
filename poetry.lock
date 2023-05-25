@@ -581,6 +581,21 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "redis"
+version = "4.5.5"
+description = "Python client for Redis database and key-value store"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+async-timeout = {version = ">=4.0.2", markers = "python_full_version <= \"3.11.2\""}
+
+[package.extras]
+hiredis = ["hiredis (>=1.0.0)"]
+ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==20.0.1)", "requests (>=2.26.0)"]
+
+[[package]]
 name = "requests"
 version = "2.31.0"
 description = "Python HTTP for Humans."
@@ -803,7 +818,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "250cfb80d0d205a269773ac1c2fdc67fcafefcfc7729321200c8d309e53408cd"
+content-hash = "16245042537f1c252718a991ace8f54e03f52e19e139ee85031922f4502cb050"
 
 [metadata.files]
 aiohttp = [
@@ -1450,6 +1465,10 @@ python-decouple = [
 pytz = [
     {file = "pytz-2023.3-py2.py3-none-any.whl", hash = "sha256:a151b3abb88eda1d4e34a9814df37de2a80e301e68ba0fd856fb9b46bfbbbffb"},
     {file = "pytz-2023.3.tar.gz", hash = "sha256:1d8ce29db189191fb55338ee6d0387d82ab59f3d00eac103412d64e0ebd0c588"},
+]
+redis = [
+    {file = "redis-4.5.5-py3-none-any.whl", hash = "sha256:77929bc7f5dab9adf3acba2d3bb7d7658f1e0c2f1cafe7eb36434e751c471119"},
+    {file = "redis-4.5.5.tar.gz", hash = "sha256:dc87a0bdef6c8bfe1ef1e1c40be7034390c2ae02d92dcd0c7ca1729443899880"},
 ]
 requests = [
     {file = "requests-2.31.0-py3-none-any.whl", hash = "sha256:58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f"},
