@@ -7,6 +7,7 @@ import typing
 from functools import lru_cache, wraps
 from threading import Thread
 from time import sleep
+from traceback import print_exc
 
 import dash
 import numpy as np
@@ -58,9 +59,6 @@ app.layout = html.Div(
                 style_cell={
                     "padding": "5px",
                 },
-                # style_data={
-                #     "padding": "5px",
-                # },
             ),
             html.H1("UMAP visualization"),
             dcc.Graph(id="live-update-graph", style={"height": "80vh"}),
@@ -90,7 +88,10 @@ def bg_thread(shared):
         if prev_bytes != csv_bytes:
             prev_bytes = csv_bytes
             df = pd.read_csv(io.BytesIO(csv_bytes))
-            _on_change(df, shared)
+            try:
+                _on_change(df, shared)
+            except:
+                print_exc()
         sleep(1)
 
 
