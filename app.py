@@ -113,10 +113,14 @@ def _on_change(df, shared):
         embeds
     )
     data = StandardScaler().fit_transform(data)
-    shared["plot"] = dict(
+    shared["plot"] = go.Scatter(
         x=[row[0] for row in data],
         y=[row[1] for row in data],
         text=keys,
+        customdata=docs,
+        hovertemplate="<b>%{text}</b><br>%{customdata}<extra></extra>",
+        mode="markers+text",
+        textposition="top center",
     )
 
     sims = embeds @ embeds.T
@@ -192,13 +196,7 @@ def update_graph_live(n):
     fig = make_subplots()
     data = get_shared()
     if "plot" in data:
-        fig.add_trace(
-            go.Scatter(
-                **data["plot"],
-                mode="markers+text",
-                textposition="top center",
-            ),
-        )
+        fig.add_trace(data["plot"])
     return fig
 
 
@@ -209,7 +207,7 @@ def update_graph_live(n):
 def update_matches(n):
     data = get_shared()
     if "top_matches" not in data:
-        return {}
+        return
     df = data["top_matches"]
     return df.to_dict("records")
 
