@@ -14,6 +14,7 @@ from traceback import print_exc
 import dash
 import networkx as nx
 import numpy as np
+
 # import openai
 import pandas as pd
 import plotly.graph_objects as go
@@ -51,7 +52,7 @@ graph_config = dict(
     displayModeBar=True,
     scrollZoom=True,
     displaylogo=False,
-    modeBarButtonsToRemove=["lasso2d", "autoScale2d", "zoom", "select"],
+    modeBarButtonsToRemove=["lasso2d", "autoScale2d", "select"],
 )
 
 fig_layout = go.Layout(
