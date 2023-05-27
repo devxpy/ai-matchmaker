@@ -14,7 +14,6 @@ from traceback import print_exc
 import dash
 import networkx as nx
 import numpy as np
-
 # import openai
 import pandas as pd
 import plotly.graph_objects as go
@@ -26,7 +25,6 @@ from furl import furl
 from googleapiclient import discovery
 from googleapiclient.http import MediaIoBaseDownload
 from sentence_transformers import SentenceTransformer
-
 
 service_account_key_path = "serviceAccountKey.json"
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = service_account_key_path
@@ -49,15 +47,60 @@ batch_size = 100
 app = dash.Dash(__name__)
 server = app.server
 
+graph_config = dict(
+    displayModeBar=True,
+    scrollZoom=True,
+    displaylogo=False,
+    modeBarButtonsToRemove=["lasso2d", "autoScale2d", "zoom", "select"],
+)
+
+fig_layout = go.Layout(
+    plot_bgcolor="rgb(250,250,250)",
+    dragmode="pan",
+    margin=dict(l=20, r=20, t=20, b=20),
+    uirevision="some-constant-figure",
+    xaxis=dict(
+        automargin=True,
+        showticklabels=False,
+        zeroline=False,
+        showgrid=True,
+        scaleanchor="x",
+        scaleratio=1,
+    ),
+    yaxis=dict(
+        automargin=True,
+        showticklabels=False,
+        zeroline=False,
+        showgrid=True,
+        scaleanchor="x",
+        scaleratio=1,
+    ),
+)
+
+heatmap_layout = go.Layout(
+    plot_bgcolor="rgba(0,0,0,0)",
+    dragmode="pan",
+    margin=dict(l=120, b=120, r=40, t=40),
+    uirevision="some-constant-heatmap",
+    xaxis=dict(
+        showgrid=False,
+        tickangle=-45,
+    ),
+    yaxis=dict(
+        showgrid=False,
+        tickangle=-45,
+    ),
+)
+
 
 @lru_cache
 def get_shared():
     shared = {
-        "fig": go.Figure(),
-        "heatmap": go.Figure(),
+        "fig": go.Figure(layout=fig_layout),
+        "heatmap": go.Figure(layout=heatmap_layout),
         "submissions": None,
     }
-    Thread(target=bg_thread, args=[shared]).start()
+    Thread(target=bg_thread, args=[shared], daemon=True).start()
     return shared
 
 
@@ -81,6 +124,7 @@ def serve_layout():
                     id="live-update-graph",
                     style={"height": "90vh"},
                     figure=data["fig"],
+                    config=graph_config,
                 ),
                 dcc.Markdown(
                     """
@@ -96,6 +140,7 @@ def serve_layout():
                     id="live-update-heatmap",
                     style={"height": "90vh"},
                     figure=data["heatmap"],
+                    config=graph_config,
                 ),
                 dcc.Markdown(
                     """
@@ -198,36 +243,35 @@ def _on_change(df: pd.DataFrame, shared):
     G = nx.minimum_spanning_tree(G)
     pos = nx.spring_layout(G, seed=42)
 
-    fig = go.Figure(
-        data=go.Scatter(
-            x=[pos[k][0] for k in pos],
-            y=[pos[k][1] for k in pos],
-            mode="markers+text",
-            text=[G.nodes[k]["label"] for k in pos],
-            textposition="top center",
-            customdata=interests,
-            hovertemplate="""
+    shared["fig"] = dict(
+        data=[
+            go.Scatter(
+                x=[pos[k][0] for k in pos],
+                y=[pos[k][1] for k in pos],
+                mode="markers+text",
+                text=[G.nodes[k]["label"] for k in pos],
+                textposition="top center",
+                customdata=interests,
+                hovertemplate="""
 <b>%{text}</b>
 <br>
 %{customdata}
 <extra></extra>
             """,
-            marker=dict(
-                color=[sum(sims[k]) for k in pos],
-                colorscale="Greens",
-                size=10,
-            ),
-        ),
-        layout=go.Layout(
-            margin=dict(l=0, r=0, t=0, b=0),
-        ),
+                marker=dict(
+                    color=[sum(sims[k]) for k in pos],
+                    colorscale="Oryel",
+                    size=10,
+                ),
+            )
+        ],
+        layout=fig_layout,
     )
-    fig["layout"]["uirevision"] = "some-constant"
-    shared["fig"] = fig
 
     heatmap = sims.copy()
     heatmap[np.diag_indices_from(heatmap)] = np.nan
-    fig = go.Figure(
+
+    shared["heatmap"] = dict(
         data=[
             go.Heatmap(
                 z=heatmap,
@@ -246,13 +290,8 @@ def _on_change(df: pd.DataFrame, shared):
                 colorscale="YlGn",
             )
         ],
-        layout=go.Layout(
-            plot_bgcolor="rgba(0,0,0,0)",
-            margin=dict(l=0, r=0, t=0, b=0),
-        ),
+        layout=heatmap_layout,
     )
-    fig["layout"]["uirevision"] = "some-constant-heatmap"
-    shared["heatmap"] = fig
 
     sims[np.diag_indices_from(sims)] = 0
     top_k = np.argsort(sims, axis=1)[:, -3:]
