@@ -9,7 +9,7 @@ WORKDIR $WORKDIR
 COPY ./pyproject.toml ./poetry.lock ./
 # install python dependencies
 RUN pip install -U poetry pip && poetry install --only main --no-interaction
-CMD poetry run pip install torch --index-url https://download.pytorch.org/whl/cpu
+CMD poetry run pip install --reinstall torch --index-url https://download.pytorch.org/whl/cpu
 
 # copy the code into the container
 COPY . .
