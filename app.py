@@ -14,7 +14,8 @@ from traceback import print_exc
 import dash
 import networkx as nx
 import numpy as np
-import openai
+
+# import openai
 import pandas as pd
 import plotly.graph_objects as go
 import redis as redis
@@ -40,7 +41,7 @@ else:
 
 
 SHEETS_URL = config("SHEETS_URL")
-openai.api_key = config("OPENAI_API_KEY")
+# openai.api_key = config("OPENAI_API_KEY")
 r = redis.Redis.from_url(config("REDIS_CACHE_URL", "redis://localhost:6379"))
 
 batch_size = 100
