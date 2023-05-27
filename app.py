@@ -57,6 +57,7 @@ def get_shared():
     return shared
 
 
+app.title = "AI Matchmaker"
 app.layout = html.Div(
     html.Div(
         [
