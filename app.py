@@ -73,7 +73,7 @@ Hover to see the interests of the person.
             ),
             dcc.Graph(
                 id="live-update-graph",
-                style={"height": "110vh"},
+                style={"height": "90vh"},
             ),
             dcc.Markdown(
                 """
@@ -87,7 +87,7 @@ Note that this doesn't mean that the converse is also true. They might have bett
             ),
             dcc.Graph(
                 id="live-update-heatmap",
-                style={"height": "100vh"},
+                style={"height": "90vh"},
             ),
             dcc.Markdown(
                 """
@@ -186,6 +186,9 @@ def _on_change(df: pd.DataFrame, shared):
                 size=10,
             ),
         ),
+        layout=go.Layout(
+            margin=dict(l=0, r=0, t=0, b=0),
+        ),
     )
     fig["layout"]["uirevision"] = "some-constant"
     shared["fig"] = fig
@@ -213,6 +216,7 @@ def _on_change(df: pd.DataFrame, shared):
         ],
         layout=go.Layout(
             plot_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=0, r=0, t=0, b=0),
         ),
     )
     fig["layout"]["uirevision"] = "some-constant-heatmap"
@@ -343,7 +347,7 @@ def _sentence_embedding_create(input, engine="sentence-transformers/all-MiniLM-L
     return embeddings
 
 
-def wrap_text(text: str, maxlen: int = 80, sep: str = " …") -> str:
+def wrap_text(text: str, maxlen: int = 40, sep: str = " …") -> str:
     return "<br>".join(textwrap.wrap(text.strip(), width=maxlen))
     # if len(text) <= maxlen:
     #     return text
