@@ -52,75 +52,107 @@ server = app.server
 
 @lru_cache
 def get_shared():
-    shared = {}
+    shared = {
+        "fig": go.Figure(),
+        "heatmap": go.Figure(),
+        "submissions": None,
+    }
     Thread(target=bg_thread, args=[shared]).start()
     return shared
 
 
-app.title = "AI Matchmaker"
-app.layout = html.Div(
-    html.Div(
-        [
-            dcc.Markdown(
-                """
-# Who's interests are _nearest_ to mine?
+def serve_layout():
+    data = get_shared()
 
-We calculate the distance matrix from the embeddings of your interests.   
-Then we plot a minimum spanning tree of the graph using a spring layout algorithm
+    return html.Div(
+        html.Div(
+            [
+                dcc.Markdown(
+                    """
+    # Who's interests are _nearest_ to mine?
 
-Hover to see the interests of the person.            
-                """
-            ),
-            dcc.Graph(
-                id="live-update-graph",
-                style={"height": "90vh"},
-            ),
-            dcc.Markdown(
-                """
-## Heatmap
+    We calculate the distance matrix from the embeddings of your interests.   
+    Then we plot a minimum spanning tree of the graph using a spring layout algorithm
 
-The distance matrix plotted as a heatmap.
- 
-The darker the cell, the closer your interests are to them.   
-Note that this doesn't mean that the converse is also true. They might have better matches than you. 
-                """
-            ),
-            dcc.Graph(
-                id="live-update-heatmap",
-                style={"height": "90vh"},
-            ),
-            dcc.Markdown(
-                """
-## All submissions
-The list of all submissions.
-Note that if someone is in your nearest list, that doesn't mean you are in *their* nearest.                 
-                """
-            ),
-            dash_table.DataTable(
-                id="live-update-submissions",
-                fill_width=True,
-                style_table={
-                    "max-width": "100%",
-                    "overflow-x": "scroll",
-                },
-                style_header={
-                    "font-weight": "bold",
-                },
-                style_cell={
-                    "max-width": "100%",
-                    "padding": "5px",
-                    "text-align": "left",
-                },
-            ),
-            dcc.Interval(
-                id="interval-component",
-                interval=1000,  # in milliseconds
-                n_intervals=1,
-            ),
-        ],
-        style={"fontFamily": "system-ui"},
+    Hover to see the interests of the person.            
+                    """
+                ),
+                dcc.Graph(
+                    id="live-update-graph",
+                    style={"height": "90vh"},
+                    figure=data["fig"],
+                ),
+                dcc.Markdown(
+                    """
+    ## Heatmap
+
+    The distance matrix plotted as a heatmap.
+
+    The darker the cell, the closer your interests are to them.   
+    Note that this doesn't mean that the converse is also true. They might have better matches than you. 
+                    """
+                ),
+                dcc.Graph(
+                    id="live-update-heatmap",
+                    style={"height": "90vh"},
+                    figure=data["heatmap"],
+                ),
+                dcc.Markdown(
+                    """
+    ## All submissions
+    The list of all submissions.
+    Note that if someone is in your nearest list, that doesn't mean you are in *their* nearest.                 
+                    """
+                ),
+                dash_table.DataTable(
+                    id="live-update-submissions",
+                    data=data["submissions"],
+                    fill_width=True,
+                    style_table={
+                        "max-width": "100%",
+                        "overflow-x": "scroll",
+                    },
+                    style_header={
+                        "font-weight": "bold",
+                    },
+                    style_cell={
+                        "max-width": "100%",
+                        "padding": "5px",
+                        "text-align": "left",
+                    },
+                ),
+                dcc.Interval(
+                    id="interval-component",
+                    interval=2000,
+                ),
+            ],
+            style={"fontFamily": "system-ui"},
+        )
     )
+
+
+@app.callback(
+    Output("live-update-graph", "figure"),
+    Input("interval-component", "n_intervals"),
 )
+def update_graph_live(n):
+    return get_shared()["fig"]
+
+
+@app.callback(
+    Output("live-update-heatmap", "figure"),
+    Input("interval-component", "n_intervals"),
+)
+def update_heatmap_live(n):
+    return get_shared()["heatmap"]
+
+
+@app.callback(
+    Output("live-update-submissions", "data"),
+    Input("interval-component", "n_intervals"),
+)
+def update_submisions(n):
+    return get_shared()["submissions"]
 
 
 def bg_thread(shared):
@@ -233,7 +265,7 @@ def _on_change(df: pd.DataFrame, shared):
         tag = string.ascii_uppercase[len(nearests) - k - 1]
         df.insert(pos, f"Nearest {tag}", nearests[k])
 
-    shared["submissions"] = df.iloc[::-1]
+    shared["submissions"] = df.iloc[::-1].to_dict("records")
 
 
 whitespace_re = re.compile("\s+")
@@ -269,40 +301,6 @@ def url_to_gdrive_file_id(f: furl) -> str:
         except (IndexError, ValueError):
             raise ValueError(f"Bad google drive link: {str(f)!r}")
     return file_id
-
-
-@app.callback(
-    Output("live-update-graph", "figure"),
-    Input("interval-component", "n_intervals"),
-)
-def update_graph_live(n):
-    data = get_shared()
-    if "fig" in data:
-        return data["fig"]
-    else:
-        return go.Figure()
-
-
-@app.callback(
-    Output("live-update-heatmap", "figure"),
-    Input("interval-component", "n_intervals"),
-)
-def update_heatmap_live(n):
-    data = get_shared()
-    if "heatmap" in data:
-        return data["heatmap"]
-    else:
-        return go.Figure()
-
-
-@app.callback(
-    Output("live-update-submissions", "data"),
-    Input("interval-component", "n_intervals"),
-)
-def update_submisions(n):
-    shared = get_shared()
-    if "submissions" in shared:
-        return shared["submissions"].to_dict("records")
 
 
 F = typing.TypeVar("F", bound=typing.Callable[..., typing.Any])
@@ -358,6 +356,10 @@ def wrap_text(text: str, maxlen: int = 40, sep: str = " …") -> str:
     # else:
     #     trunc = text[: maxlen - len(sep)]
     # return trunc + sep
+
+
+app.title = "AI Matchmaker"
+app.layout = serve_layout
 
 
 if __name__ == "__main__":
